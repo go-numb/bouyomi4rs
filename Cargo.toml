@@ -1,0 +1,6 @@
+[package]
+name = "rs_bouyomi"
+version = "0.1.0"
+edition = "2021"
+authors = ["_numbp"]
+license = "MIT"
