@@ -1,6 +1,8 @@
 [package]
-name = "rs_bouyomi"
-version = "0.1.0"
+name = "bouyomi4rs"
+description = "BouyomiClientは、棒読みちゃんのアプリ連携機能（TCP）を使用して、テキストを音声で読み上げるためのRustライブラリです。"
+version = "0.2.0"
+homepage = "https://github.com/go-numb/bouyomi4rs"
 edition = "2021"
 authors = ["_numbp"]
 license = "MIT"

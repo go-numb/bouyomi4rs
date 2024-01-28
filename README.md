@@ -1,4 +1,4 @@
-# BouyomiClient for Rust
+# [Bouyomi4rs] BouyomiClient for Rust
 
 BouyomiClientは、棒読みちゃんのアプリ連携機能（TCP）を使用して、テキストを音声で読み上げるためのRustライブラリです。
 
@@ -15,7 +15,7 @@ BouyomiClientは、棒読みちゃんのアプリ連携機能（TCP）を使用�
 ## Usage
 
 ```rust
-use rs_bouyomi::{BouyomiClient, TalkConfig};
+use bouyomi4rs::{BouyomiClient, TalkConfig};
 
 let mut config = TalkConfig::default();
 config.set_voice(1).set_volume(100).set_speed(100).set_tone(100);
@@ -47,4 +47,4 @@ client.wait(60);
 
 ## License
 
-[MIT](https://github.com/go-numb/rust-bouyomichan/blob/master/LICENSE)
+[MIT](https://github.com/go-numb/bouyomi4rs/blob/master/LICENSE)

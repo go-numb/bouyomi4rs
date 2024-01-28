@@ -1,12 +1,12 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-use std::time::Duration;
 use std::thread::sleep;
+use std::time::Duration;
 
-// 棒読みちゃんのクライアント
-// アプリ連携機能（TCP）を使用
-// デフォルト: 127.0.0.1:50001
+/// ## 棒読みちゃんのクライアント
+/// アプリ連携機能（TCP）を使用
+/// デフォルト: 127.0.0.1:50001
 pub struct BouyomiClient {
     host: String,
     port: String,
@@ -14,7 +14,7 @@ pub struct BouyomiClient {
     config: TalkConfig,
 }
 
-// 棒読みちゃんの発声設定
+/// ## 棒読みちゃんの発声設定
 pub struct TalkConfig {
     pub code: u8,
     pub voice: i16,
@@ -23,14 +23,14 @@ pub struct TalkConfig {
     pub tone: i16,
 }
 
-// カスタムエラー型
+/// ## カスタムエラー型
 #[derive(Debug)]
 pub enum MyError {
     IoError(std::io::Error),
     OtherError(String), // エラーメッセージを含める
 }
 
-// Result型のエイリアスを定義
+/// ## Result型のエイリアスを定義
 type Result<T> = std::result::Result<T, MyError>;
 
 impl TalkConfig {
@@ -108,8 +108,17 @@ impl BouyomiClient {
     }
 
     // デフォルト設定で話す
-    pub fn talk(&self, message: impl AsRef<str>) {
-        self.talk_with_config(message, &self.config).unwrap();
+    pub fn talk(&self, message: impl AsRef<str>) -> std::result::Result<(), String> {
+        match self.talk_with_config(message, &self.config) {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                let e = match err {
+                    MyError::IoError(e) => e.to_string(),
+                    MyError::OtherError(e) => e,
+                };
+                Err(e)
+            }
+        }
     }
 
     // 設定を指定して話す
@@ -117,7 +126,7 @@ impl BouyomiClient {
         &self,
         message: impl AsRef<str>,
         talk_config: &TalkConfig,
-    ) -> Result<()> {
+    ) -> std::result::Result<(), MyError> {
         let mut stream = match TcpStream::connect(format!("{}:{}", self.host, self.port)) {
             Ok(s) => s,
             Err(e) => {
@@ -150,7 +159,7 @@ impl BouyomiClient {
         match stream.flush() {
             Ok(_) => {}
             Err(e) => {
-                println!("failed to flush stream: {}", e);
+                println!();
                 return Err(MyError::IoError(e));
             }
         };
@@ -291,9 +300,13 @@ mod tests {
     fn it_works() {
         // reimu client object
         let mut config = TalkConfig::default();
-        config.set_voice(1).set_volume(100).set_speed(100).set_tone(100);
+        config
+            .set_voice(1)
+            .set_volume(100)
+            .set_speed(100)
+            .set_tone(100);
         let reimu = BouyomiClient::new().set_config(config);
-        
+
         println!(
             "{}",
             format!(
@@ -310,14 +323,26 @@ mod tests {
         //  marisa client object
         let mut config = TalkConfig::default();
         config.set_voice(2);
-        let marisa = BouyomiClient::new().set_host("127.0.0.1").set_port("50001").set_config(config);
+        let marisa = BouyomiClient::new()
+            .set_host("127.0.0.1")
+            .set_port("50001")
+            .set_config(config);
 
         // test talk
-        reimu.talk("ねえねえ、魔理沙、何してるの？");
+        match reimu.talk("ねえねえ、魔理沙、何してるの？") {
+            Ok(_) => {}
+            Err(e) => {
+                // 棒読みちゃんを起動していないなどのエラーは無視する場合が多いため、このように捨てることができる
+                println!("failed to talk: {}", e);
+            }
+        }
+
         // wait for end the task
         reimu.wait(60);
 
-        marisa.talk("おすおす、霊夢、お昼ごはんを作ってたぜ？");
+        marisa
+            .talk("おすおす、霊夢、お昼ごはんを作ってたぜ？")
+            .unwrap();
         marisa.wait(60);
 
         println!("success!");
