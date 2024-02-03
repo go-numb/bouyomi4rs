@@ -33,10 +33,9 @@ pub enum MyError {
 /// ## Result型のエイリアスを定義
 type Result<T> = std::result::Result<T, MyError>;
 
-impl TalkConfig {
-    // 新しいTalkConfigの生成
-    pub fn new() -> Self {
-        TalkConfig {
+impl Default for TalkConfig {
+    fn default() -> Self {
+        Self {
             code: 0,    // デフォルトコードは 0
             voice: 0,   // default=0 (1-8: AquesTalk, 10001-: SAPI5)
             volume: 80, // default=-1 (0-100)
@@ -44,17 +43,15 @@ impl TalkConfig {
             tone: 100,  // default=-1 (50-200)
         }
     }
+}
 
-    // 基本設定で生成
-    pub fn default() -> Self {
-        TalkConfig {
-            code: 0,    // デフォルトコードは 0
-            voice: 0,   // デフォルトの声種は 1
-            volume: -1, // -1 は「現在の音量で設定」を意味する
-            speed: -1,  // -1 は「標準の話速で設定」を意味する
-            tone: -1,   // -1 は「標準の高さで設定」を意味する
-        }
+
+impl TalkConfig {
+    // 新しいTalkConfigの生成
+    pub fn new() -> Self {
+        Self::default()
     }
+
 
     // 声種の設定
     pub fn set_voice(&mut self, voice: i16) -> &mut Self {
@@ -81,14 +78,20 @@ impl TalkConfig {
     }
 }
 
-impl BouyomiClient {
-    // 新しいクライアントの生成
-    pub fn new() -> Self {
+impl Default for BouyomiClient {
+    fn default() -> Self {
         BouyomiClient {
             host: String::from("127.0.0.1"),
             port: String::from("50001"),
             config: TalkConfig::new(),
         }
+    }
+}
+
+impl BouyomiClient {
+    // 新しいクライアントの生成
+    pub fn new() -> Self {
+        Self::default()
     }
 
     // Builderパターンを使用
@@ -147,13 +150,13 @@ impl BouyomiClient {
         let code_bytes = [talk_config.code];
         let message_length_bytes = message_length.to_le_bytes();
 
-        stream.write(&talk_command_bytes).unwrap();
-        stream.write(&speed_bytes).unwrap();
-        stream.write(&tone_bytes).unwrap();
-        stream.write(&volume_bytes).unwrap();
-        stream.write(&voice_bytes).unwrap();
-        stream.write(&code_bytes).unwrap();
-        stream.write(&message_length_bytes).unwrap();
+        stream.write_all(&talk_command_bytes).unwrap();
+        stream.write_all(&speed_bytes).unwrap();
+        stream.write_all(&tone_bytes).unwrap();
+        stream.write_all(&volume_bytes).unwrap();
+        stream.write_all(&voice_bytes).unwrap();
+        stream.write_all(&code_bytes).unwrap();
+        stream.write_all(&message_length_bytes).unwrap();
         stream.write_all(message_bytes).unwrap();
 
         match stream.flush() {
@@ -191,16 +194,13 @@ impl BouyomiClient {
     pub fn is_pause(&self) -> Result<bool> {
         match self.send_command_with_response(0x110) {
             Ok(res) => {
-                if res == 0 {
-                    Ok(false)
-                } else {
+                if res == 1 {
                     Ok(true)
+                } else {
+                    Ok(false)
                 }
-            }
-            Err(_) => {
-                println!("failed to get pause status.");
-                return Ok(false);
-            }
+            },
+            Err(_) => Ok(false),
         }
     }
 
@@ -214,10 +214,7 @@ impl BouyomiClient {
                     Ok(true)
                 }
             }
-            Err(_) => {
-                println!("failed to get playing status.");
-                return Ok(false);
-            }
+            Err(_) => Ok(false),
         }
     }
 
@@ -257,7 +254,7 @@ impl BouyomiClient {
         };
 
         let talk_command_bytes = command_id.to_le_bytes();
-        stream.write(&talk_command_bytes).unwrap();
+        stream.write_all(&talk_command_bytes).unwrap();
         stream.flush().unwrap();
 
         Ok(())
@@ -274,7 +271,7 @@ impl BouyomiClient {
         };
 
         let talk_command_bytes = command_id.to_le_bytes();
-        stream.write(&talk_command_bytes).unwrap();
+        stream.write_all(&talk_command_bytes).unwrap();
         stream.flush().unwrap();
 
         let mut res = Vec::new();
@@ -292,9 +289,7 @@ impl BouyomiClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::TalkConfig;
-
-    use super::BouyomiClient;
+    use super::*;
 
     #[test]
     fn it_works() {
@@ -308,16 +303,13 @@ mod tests {
         let reimu = BouyomiClient::new().set_config(config);
 
         println!(
-            "{}",
-            format!(
-                "host: {}, port: {}, voice: {}, volume: {}, speed: {}, tone: {})",
-                reimu.host,
-                reimu.port,
-                reimu.config.voice,
-                reimu.config.volume,
-                reimu.config.speed,
-                reimu.config.tone
-            )
+            "host: {}, port: {}, voice: {}, volume: {}, speed: {}, tone: {}",
+            reimu.host,
+            reimu.port,
+            reimu.config.voice,
+            reimu.config.volume,
+            reimu.config.speed,
+            reimu.config.tone   
         );
 
         //  marisa client object
